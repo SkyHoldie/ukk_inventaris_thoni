@@ -22,6 +22,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/dashboard', [AdminControllers::class, 'index'])->name('dashboard');
 
     Route::resource('/hitung_depresiasi', HitungDepresiasiController::class);
+    Route::get('/hitung_depresiasi/{id_pengadaan}',[ HitungDepresiasiController::class, 'show'])->name('hitung_depresiasi.detail');
     Route::resource('/opname', OpnameController::class);
     Route::resource('/mutasi_lokasi', MutasiLokasiController::class);
     Route::resource('/lokasi', LokasiController::class);

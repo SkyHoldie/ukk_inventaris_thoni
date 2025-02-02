@@ -10,6 +10,7 @@
                 <th>#</th>
                 <th>Nama Barang</th>
                 <th>Lama Depresiasi</th>
+                <th>Depresiasi Barang</th> <!-- Tambahan baru -->
                 <th>Nama Merek</th>
                 <th>Nama Satuan</th>
                 <th>Nama Sub-Kategori</th>
@@ -29,7 +30,7 @@
         <tbody>
             @if ($pengadaan->isEmpty())
                 <tr>
-                    <td colspan="17" class="text-center">Belum ada data pengadaan.</td>
+                    <td colspan="18" class="text-center">Belum ada data pengadaan.</td>
                 </tr>
             @else
                 @foreach ($pengadaan as $item)
@@ -37,6 +38,7 @@
                         <td>{{ $loop->iteration }}</td>
                         <td>{{ $item->masterBarang->nama_barang ?? '-' }}</td>
                         <td>{{ $item->depresiasi->lama_depresiasi ?? '-' }} tahun</td>
+                        <td>{{ number_format($item->nilai_depresiasi_terkini ?? '-', 0, ',', '.') }}</td>
                         <td>{{ $item->merk->merk ?? '-' }}</td>
                         <td>{{ $item->satuan->nama_satuan ?? '-' }}</td>
                         <td>{{ $item->subKategoriAsset->nama_sub_kategori ?? '-' }}</td>
@@ -51,8 +53,10 @@
                         <td>{{ $item->fb == '1' ? 'Ya' : 'Tidak' }}</td>
                         <td>{{ $item->keterangan ?? '-' }}</td>
                         <td>
-                            <a href="{{ route('admin.pengadaan.edit', $item->id_pengadaan) }}" class="btn btn-warning btn-sm">Edit</a>
-                            <form action="{{ route('admin.pengadaan.destroy', $item->id_pengadaan) }}" method="POST" style="display:inline;">
+                            <a href="{{ route('admin.pengadaan.edit', $item->id_pengadaan) }}"
+                                class="btn btn-warning btn-sm">Edit</a>
+                            <form action="{{ route('admin.pengadaan.destroy', $item->id_pengadaan) }}" method="POST"
+                                style="display:inline;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-danger btn-sm">Hapus</button>

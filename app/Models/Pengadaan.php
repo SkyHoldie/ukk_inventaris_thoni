@@ -29,10 +29,10 @@ class Pengadaan extends Model
         'harga_barang',
         'nilai_barang',
         'depresiasi_barang', // Kolom baru untuk nilai depresiasi
-        'usia_bulan', // Kolom baru untuk masa depresiasi barang
         'fb',
         'keterangan',
     ];
+    
 
     // Relasi dengan MasterBarang
     public function masterBarang()
@@ -84,6 +84,6 @@ class Pengadaan extends Model
     // Fungsi untuk menghitung depresiasi
     public function hitungDepresiasi()
     {
-        return $this->harga_barang / ($this->usia_bulan ?? 60);
+        return $this->hasMany(HitungDepresiasi::class, 'id_pengadaan');
     }
 }

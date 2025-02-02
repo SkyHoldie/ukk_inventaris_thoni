@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Depresiasi;
 use App\Models\Distributor;
+use App\Models\HitungDepresiasi;
 use App\Models\MasterBarang;
 use App\Models\Merk;
 use App\Models\Pengadaan;
@@ -17,24 +18,36 @@ class PengadaanController extends Controller
     // Menampilkan daftar pengadaan
     public function index()
     {
+        // $barangDepresiasi = HitungDepresiasi::all();
         $pengadaan = Pengadaan::with([
             'masterBarang',
             'depresiasi',
             'merk',
             'satuan',
             'subKategoriAsset',
-            'distributor'
+            'distributor',
+            'hitungDepresiasi'
         ])->get();
-        // dd($pengadaan);
+        // Perhitungan depresiasi barang berdasarkan bulan saat ini
+        foreach ($pengadaan as $item) {
+            if ($item->depresiasi) {
+                $lama_depresiasi_bulan = $item->depresiasi->lama_depresiasi * 12; // Menghitung dalam bulan
+                $penyusutan_per_bulan = $item->harga_barang / $lama_depresiasi_bulan;
 
+                $nilai_barang = $item->harga_barang;
+                $bulan_sekarang = \Carbon\Carbon::now()->month; // Mendapatkan bulan saat ini
 
-        // $pengadaan = Pengadaan::with('masterBarang', 'depresiasi', 'merk', 'satuan', 'subKategori', 'distributor')->get();
-        // dd($pengadaan);
-        return view('admin.pengadaan.index', compact(
+                $nilai_depresiasi = 0;
+                for ($bulan_counter = 1; $bulan_counter <= $bulan_sekarang; $bulan_counter++) {
+                    $nilai_barang -= $penyusutan_per_bulan;
+                }
 
-            'pengadaan',
+                // Menyimpan nilai depresiasi yang sudah dihitung untuk ditampilkan di view
+                $item->nilai_depresiasi_terkini = max(0, $nilai_barang);
+            }
+        }
 
-        ));
+        return view('admin.pengadaan.index', compact('pengadaan'));
     }
 
     // Menampilkan form untuk membuat pengadaan baru
@@ -46,27 +59,20 @@ class PengadaanController extends Controller
         $satuans = Satuan::all();
         $subs = SubKategoriAsset::all();
         $distributors = Distributor::all();
-        // dd($masters-);
-        // $pengadaans = Pengadaan::with('masterBarang','depresiasi','merk','satuan','subKategori','distributor')->get();
-        return view(
-            'admin.pengadaan.create',
-            compact(
-                'masters',
-                'depresiasis',
-                'merks',
-                'satuans',
-                'subs',
-                'distributors',
-            )
-        );
+
+        return view('admin.pengadaan.create', compact(
+            'masters',
+            'depresiasis',
+            'merks',
+            'satuans',
+            'subs',
+            'distributors'
+        ));
     }
 
-    // Menyimpan pengadaan baru
+    // Menyimpan pengadaan baru dan menghitung depresiasi_barang
     public function store(Request $request)
     {
-        // dd($request->input('id_depresiasi'));
-        // dd($request->all());
-
         $validatedData = $request->validate([
             'id_master_barang' => 'required|string|max:10|exists:tbl_master_barang,id_barang',
             'id_depresiasi' => 'required|string|max:10|exists:tbl_depresiasi,id_depresiasi',
@@ -75,24 +81,20 @@ class PengadaanController extends Controller
             'id_sub_kategori_asset' => 'required|string|max:10|exists:tbl_sub_kategori_asset,id_sub_kategori_asset',
             'id_distributor' => 'required|string|max:10|exists:tbl_distributor,id_distributor',
             'kode_pengadaan' => 'required|string|max:20',
-            'no_invoice' => 'required|string|max:20',  // Perbaiki nama 'no_invonice' menjadi 'no_invoice'
+            'no_invoice' => 'required|string|max:20',
             'no_seri_barang' => 'required|string|max:50',
-            'tahun_produksi' => 'required|numeric|digits:4',  // Menggunakan 'numeric' dan membatasi panjangnya menjadi 4 digit
-            'tgl_pengadaan' => 'required|date',  // Validasi tanggal
-            'harga_barang' => 'required|numeric|min:0',  // Menggunakan 'numeric' dan 'min' untuk batasan nilai
-            'nilai_barang' => 'required|numeric|min:0',  // Menggunakan 'numeric' dan 'min' untuk batasan nilai
+            'tahun_produksi' => 'required|numeric|digits:4',
+            'tgl_pengadaan' => 'required|date',
+            'harga_barang' => 'required|numeric|min:0',
+            'nilai_barang' => 'required|numeric|min:0',
             'fb' => 'required|in:0,1',
-            'keterangan' => 'required|string|max:50',
+            'keterangan' => 'nullable|string|max:50',
         ]);
-        // dd($validatedData);
-
-
-        // Menyimpan data pengadaan ke database
+        // Simpan ke database
         Pengadaan::create($validatedData);
 
-        return redirect()->route('admin.pengadaan.index');
+        return redirect()->route('admin.pengadaan.index')->with('success', 'Data pengadaan berhasil disimpan dengan depresiasi awal.');
     }
-
 
     // Menampilkan pengadaan berdasarkan ID
     public function show($id)
@@ -104,7 +106,6 @@ class PengadaanController extends Controller
     // Menampilkan form untuk mengedit pengadaan
     public function edit($id)
     {
-
         $masters = MasterBarang::all();
         $depresiasis = Depresiasi::all();
         $merks = Merk::all();
@@ -112,6 +113,7 @@ class PengadaanController extends Controller
         $subs = SubKategoriAsset::all();
         $distributors = Distributor::all();
         $pengadaan = Pengadaan::where('id_pengadaan', $id)->first();
+
         return view('admin.pengadaan.edit', compact(
             'pengadaan',
             'masters',
@@ -119,7 +121,7 @@ class PengadaanController extends Controller
             'merks',
             'satuans',
             'subs',
-            'distributors',
+            'distributors'
         ));
     }
 
@@ -127,14 +129,26 @@ class PengadaanController extends Controller
     public function update(Request $request, $id)
     {
         $pengadaan = Pengadaan::findOrFail($id);
-        $pengadaan->update($request->all());
-        return redirect()->route('admin.pengadaan.index');
+
+        $validatedData = $request->validate([
+            'harga_barang' => 'required|numeric|min:0',
+            'id_depresiasi' => 'required|string|max:10|exists:tbl_depresiasi,id_depresiasi',
+        ]);
+
+        // Ambil lama depresiasi terbaru
+        $depresiasi = Depresiasi::findOrFail($request->id_depresiasi);
+        $depresiasi_barang = $validatedData['harga_barang'] / $depresiasi->lama_depresiasi;
+
+        // Update depresiasi_barang juga
+        $pengadaan->update(array_merge($validatedData, ['depresiasi_barang' => $depresiasi_barang]));
+
+        return redirect()->route('admin.pengadaan.index')->with('success', 'Data pengadaan berhasil diperbarui.');
     }
 
     // Menghapus pengadaan
     public function destroy($id)
     {
         Pengadaan::findOrFail($id)->delete();
-        return redirect()->route('admin.pengadaan.index');
+        return redirect()->route('admin.pengadaan.index')->with('success', 'Data pengadaan berhasil dihapus.');
     }
 }

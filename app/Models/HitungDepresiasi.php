@@ -16,7 +16,6 @@ class HitungDepresiasi extends Model
     protected $fillable = [
         'id_pengadaan',
         'tgl_hitung_depresiasi',
-        'bulan',
         'durasi',
         'nilai_barang',
     ];

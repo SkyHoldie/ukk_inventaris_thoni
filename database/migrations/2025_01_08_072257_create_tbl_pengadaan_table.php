@@ -28,8 +28,9 @@ class CreateTblPengadaanTable extends Migration
             $table->string('no_seri_barang', 50); // Kolom nomor seri barang
             $table->string('tahun_produksi', 5); // Kolom tahun produksi
             $table->date('tgl_pengadaan'); // Kolom tanggal pengadaan
-            $table->integer('harga_barang'); // Kolom harga barang
-            $table->integer('nilai_barang'); // Kolom nilai barang
+            $table->decimal('harga_barang'); // Kolom harga barang
+            $table->decimal('nilai_barang'); // Kolom nilai barang
+            $table->decimal('depresiasi_barang')->default(0);
             $table->enum('fb', ['0', '1']); // Kolom flag (fb) dengan nilai enum
             $table->string('keterangan', 50)->nullable(); // Kolom keterangan
             $table->timestamps(); // Kolom created_at dan updated_at
